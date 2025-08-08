@@ -45,7 +45,7 @@ func GetFIO() (fioCmd string, tempFile string, err error) {
 	}
 	// 3. 使用嵌入的 fio 版本
 	binName := "fio-windows-386.exe"
-	binPath := filepath.Join("bin", binName)
+	binPath := fmt.Sprintf("bin/%s", binName)
 	fileContent, readErr := binFiles.ReadFile(binPath)
 	if readErr == nil {
 		tempFile = filepath.Join(tempDir, binName)
