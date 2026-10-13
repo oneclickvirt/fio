@@ -231,6 +231,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: main
+        fetch-depth: 0
     - name: Download all artifacts
       uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
@@ -253,14 +256,14 @@ jobs:
     - name: Commit binaries to repository
       run: |
         set -euo pipefail
-        set -euo pipefail
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
         git add bin/
         if ! git diff --cached --quiet; then git commit -m "fix: Update FIO static binaries [skip ci]"; fi
-        git push
-
+        git fetch origin main
+        git rebase origin/main
+        git push origin HEAD:main
         # Version only after every declared target passed; consumers discover this immutable timestamp tag.
         new_tag="v0.0.2-$(date -u +%Y%m%d%H%M%S)"
         git tag "$new_tag"
@@ -269,3 +272,6 @@ jobs:
   workflow_dispatch: null
 permissions:
   contents: write
+concurrency:
+  group: native-binary-publication
+  cancel-in-progress: false
