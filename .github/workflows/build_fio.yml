@@ -264,12 +264,14 @@ jobs:
         git fetch origin main
         git rebase origin/main
         git push origin HEAD:main
-        # Version only after every declared target passed; consumers discover this immutable timestamp tag.
-        new_tag="v0.0.2-$(date -u +%Y%m%d%H%M%S)"
+        # Publish a stable patch only after every declared target passed.
+        git fetch --tags origin
+        new_tag="$(python3 .github/scripts/native_version.py)"
         git tag "$new_tag"
         git push origin "refs/tags/$new_tag"
 'on':
   workflow_dispatch: null
+  workflow_call: {}
 permissions:
   contents: write
 concurrency:

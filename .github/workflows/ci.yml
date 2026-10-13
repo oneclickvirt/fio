@@ -4,7 +4,7 @@ jobs:
     strategy:
       matrix:
         go:
-        - 1.22.x
+        - stable
         os:
         - ubuntu-latest
     runs-on: ${{ matrix.os }}
@@ -17,17 +17,6 @@ jobs:
         go-version: ${{ matrix.go }}
     - name: Test
       run: go test ./... -coverprofile=coverage.txt
-    - name: Create Tag
-      if: success()
-      run: |
-        git config --global user.name 'github-actions'
-        git config --global user.email 'github-actions@github.com'
-        TAG="v0.0.2-$(date +'%Y%m%d%H%M%S')"
-        git tag $TAG
-        git push origin $TAG
-        echo "TAG=$TAG" >> $GITHUB_ENV
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Update README.md
       if: success()
       run: |
@@ -44,5 +33,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     env:
       GOPROXY: https://proxy.golang.org|direct
+  publish-validated-native-binaries:
+    needs: test
+    uses: ./.github/workflows/build_fio.yml
+    secrets: inherit
 'on':
   workflow_dispatch: null
