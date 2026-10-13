@@ -1,256 +1,272 @@
 name: Build fio Static Binaries
-
-on:
-  workflow_dispatch:
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        
-      - name: Create disk/bin directory
-        run: mkdir -p disk/bin
-        
-      - name: Upload bin directory
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: bin-directory
-          path: bin/
-
+    - name: Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Create disk/bin directory
+      run: mkdir -p disk/bin
+    - name: Upload bin directory
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: bin-directory
+        path: bin/
   build:
     needs: prepare
     strategy:
       matrix:
         include:
-          # Linux builds - 主要架构
-          - os: ubuntu-latest
-            target: linux-amd64
-            goos: linux
-            goarch: amd64
-          - os: ubuntu-latest
-            target: linux-386
-            goos: linux
-            goarch: 386
-          - os: ubuntu-latest
-            target: linux-arm64
-            goos: linux
-            goarch: arm64
-          - os: ubuntu-latest
-            target: linux-armv7
-            goos: linux
-            goarch: arm
-            goarm: 7
-            
-          # Linux builds - 特殊架构
-          - os: ubuntu-latest
-            target: linux-riscv64
-            goos: linux
-            goarch: riscv64
-          - os: ubuntu-latest
-            target: linux-mips64
-            goos: linux
-            goarch: mips64
-          - os: ubuntu-latest
-            target: linux-mips64le
-            goos: linux
-            goarch: mips64le
-          - os: ubuntu-latest
-            target: linux-mips
-            goos: linux
-            goarch: mips
-          - os: ubuntu-latest
-            target: linux-mipsle
-            goos: linux
-            goarch: mipsle
-          - os: ubuntu-latest
-            target: linux-ppc64
-            goos: linux
-            goarch: ppc64
-          - os: ubuntu-latest
-            target: linux-ppc64le
-            goos: linux
-            goarch: ppc64le
-            
-          # macOS builds
-          - os: macos-latest
-            target: darwin-amd64
-            goos: darwin
-            goarch: amd64
-          - os: macos-latest
-            target: darwin-arm64
-            goos: darwin
-            goarch: arm64
-      fail-fast: false  # 确保即使某个任务失败，其他任务仍然继续
-
+        - os: ubuntu-latest
+          target: linux-amd64
+          goos: linux
+          goarch: amd64
+        - os: ubuntu-latest
+          target: linux-386
+          goos: linux
+          goarch: 386
+        - os: ubuntu-latest
+          target: linux-arm64
+          goos: linux
+          goarch: arm64
+        - os: ubuntu-latest
+          target: linux-armv7
+          goos: linux
+          goarch: arm
+          goarm: 7
+        - os: ubuntu-latest
+          target: linux-riscv64
+          goos: linux
+          goarch: riscv64
+        - os: ubuntu-latest
+          target: linux-mips64
+          goos: linux
+          goarch: mips64
+        - os: ubuntu-latest
+          target: linux-mips64le
+          goos: linux
+          goarch: mips64le
+        - os: ubuntu-latest
+          target: linux-mips
+          goos: linux
+          goarch: mips
+        - os: ubuntu-latest
+          target: linux-mipsle
+          goos: linux
+          goarch: mipsle
+        - os: ubuntu-latest
+          target: linux-ppc64
+          goos: linux
+          goarch: ppc64
+        - os: ubuntu-latest
+          target: linux-ppc64le
+          goos: linux
+          goarch: ppc64le
+        - os: macos-latest
+          target: darwin-amd64
+          goos: darwin
+          goarch: amd64
+        - os: macos-latest
+          target: darwin-arm64
+          goos: darwin
+          goarch: arm64
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Download bin directory
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-directory
-          path: bin/
-
-      - name: Setup FIO build environment (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libaio-dev zlib1g-dev liburing-dev
-          # 安装交叉编译工具链
-          if [[ "${{ matrix.target }}" != "linux-amd64" ]]; then
-            echo "Installing cross-compilation toolchains for ${{ matrix.target }}"
-            if [[ "${{ matrix.target }}" == "linux-386" ]]; then
-              sudo apt-get install -y gcc-multilib
-            elif [[ "${{ matrix.target }}" == "linux-arm64" ]]; then
-              sudo apt-get install -y gcc-aarch64-linux-gnu
-            elif [[ "${{ matrix.target }}" == "linux-armv7" ]]; then
-              sudo apt-get install -y gcc-arm-linux-gnueabihf
-            elif [[ "${{ matrix.target }}" == "linux-riscv64" ]]; then
-              sudo apt-get install -y gcc-riscv64-linux-gnu
-            elif [[ "${{ matrix.target }}" == "linux-mips64" ]]; then
-              sudo apt-get install -y gcc-mips64-linux-gnuabi64
-            elif [[ "${{ matrix.target }}" == "linux-mips64le" ]]; then
-              sudo apt-get install -y gcc-mips64el-linux-gnuabi64
-            elif [[ "${{ matrix.target }}" == "linux-mips" ]]; then
-              sudo apt-get install -y gcc-mips-linux-gnu
-            elif [[ "${{ matrix.target }}" == "linux-mipsle" ]]; then
-              sudo apt-get install -y gcc-mipsel-linux-gnu
-            elif [[ "${{ matrix.target }}" == "linux-ppc64" ]]; then
-              sudo apt-get install -y gcc-powerpc64-linux-gnu
-            elif [[ "${{ matrix.target }}" == "linux-ppc64le" ]]; then
-              sudo apt-get install -y gcc-powerpc64le-linux-gnu
-            fi
-          fi
-
-      - name: Setup FIO build environment (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install coreutils
-
-      - name: Download and extract FIO source
-        run: |
-          curl -L -o fio.zip https://github.com/axboe/fio/archive/refs/tags/fio-3.39.zip
-          unzip fio.zip
-          mv fio-fio-3.39 fio-src
-        shell: bash
-
-      - name: Build FIO static binary (Linux - amd64)
-        if: matrix.target == 'linux-amd64'
-        run: |
-          cd fio-src
-          CFLAGS="-O2 -march=x86-64 -mtune=generic" ./configure --disable-native
-          make -j$(nproc) LDFLAGS="-static"
-          cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
-        continue-on-error: true
-
-      - name: Build FIO static binary (Linux - 386)
-        if: matrix.target == 'linux-386'
-        run: |
-          cd fio-src
-          CFLAGS="-m32" LDFLAGS="-m32 -static" ./configure
-          make -j$(nproc)
-          cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
-        continue-on-error: true
-
-      - name: Build FIO static binary (Linux - ARM64)
-        if: matrix.target == 'linux-arm64'
-        run: |
-          cd fio-src
-          CC=aarch64-linux-gnu-gcc CFLAGS="-O2" ./configure --disable-native
-          make -j$(nproc) LDFLAGS="-static"
-          cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
-        continue-on-error: true
-
-      - name: Build FIO static binary (Linux - ARMv7)
-        if: matrix.target == 'linux-armv7'
-        run: |
-          cd fio-src
-          CC=arm-linux-gnueabihf-gcc CFLAGS="-O2" ./configure --disable-native
-          make -j$(nproc) LDFLAGS="-static"
-          cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}v${{ matrix.goarm }}
-        continue-on-error: true
-
-      - name: Build FIO static binary (Linux - Special Architectures)
-        if: startsWith(matrix.target, 'linux-') && !contains(matrix.target, 'amd64') && !contains(matrix.target, '386') && !contains(matrix.target, 'arm')
-        run: |
-          cd fio-src
-          
-          # 选择合适的交叉编译器
-          if [[ "${{ matrix.target }}" == "linux-riscv64" ]]; then
-            CROSS_CC=riscv64-linux-gnu-gcc
+    - name: Load trusted network recovery helpers
+      shell: bash
+      run: |
+        set -euo pipefail
+        curl --fail --silent --show-error --location --connect-timeout 15 --max-time 90 --retry 3 --retry-max-time 180 --retry-connrefused "https://raw.githubusercontent.com/oneclickvirt/fio/main/.github/scripts/ci_network.sh" -o "$RUNNER_TEMP/ci-network.sh"
+    - name: Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Download bin directory
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: bin-directory
+        path: bin/
+    - name: Setup FIO build environment (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libaio-dev zlib1g-dev liburing-dev
+        # 安装交叉编译工具链
+        if [[ "${{ matrix.target }}" != "linux-amd64" ]]; then
+          echo "Installing cross-compilation toolchains for ${{ matrix.target }}"
+          if [[ "${{ matrix.target }}" == "linux-386" ]]; then
+            sudo apt-get install -y gcc-multilib
+          elif [[ "${{ matrix.target }}" == "linux-arm64" ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          elif [[ "${{ matrix.target }}" == "linux-armv7" ]]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf
+          elif [[ "${{ matrix.target }}" == "linux-riscv64" ]]; then
+            sudo apt-get install -y gcc-riscv64-linux-gnu
           elif [[ "${{ matrix.target }}" == "linux-mips64" ]]; then
-            CROSS_CC=mips64-linux-gnuabi64-gcc
+            sudo apt-get install -y gcc-mips64-linux-gnuabi64
           elif [[ "${{ matrix.target }}" == "linux-mips64le" ]]; then
-            CROSS_CC=mips64el-linux-gnuabi64-gcc
+            sudo apt-get install -y gcc-mips64el-linux-gnuabi64
           elif [[ "${{ matrix.target }}" == "linux-mips" ]]; then
-            CROSS_CC=mips-linux-gnu-gcc
+            sudo apt-get install -y gcc-mips-linux-gnu
           elif [[ "${{ matrix.target }}" == "linux-mipsle" ]]; then
-            CROSS_CC=mipsel-linux-gnu-gcc
+            sudo apt-get install -y gcc-mipsel-linux-gnu
           elif [[ "${{ matrix.target }}" == "linux-ppc64" ]]; then
-            CROSS_CC=powerpc64-linux-gnu-gcc
+            sudo apt-get install -y gcc-powerpc64-linux-gnu
           elif [[ "${{ matrix.target }}" == "linux-ppc64le" ]]; then
-            CROSS_CC=powerpc64le-linux-gnu-gcc
+            sudo apt-get install -y gcc-powerpc64le-linux-gnu
           fi
-          CC=${CROSS_CC} ./configure --disable-native
-          make -j$(nproc) LDFLAGS="-static"
-          cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
-        continue-on-error: true
+        fi
+    - name: Setup FIO build environment (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install coreutils
+    - name: Download and extract FIO source
+      run: |
+        source "$RUNNER_TEMP/ci-network.sh"
+        curl -L -o fio.zip https://github.com/axboe/fio/archive/refs/tags/fio-3.39.zip
+        unzip fio.zip
+        mv fio-fio-3.39 fio-src
+      shell: bash
+    - name: Build FIO static binary (Linux - amd64)
+      if: matrix.target == 'linux-amd64'
+      run: |
+        cd fio-src
+        CFLAGS="-O2 -march=x86-64 -mtune=generic" ./configure --disable-native
+        make -j$(nproc) LDFLAGS="-static"
+        cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+    - name: Build FIO static binary (Linux - 386)
+      if: matrix.target == 'linux-386'
+      run: |
+        cd fio-src
+        CFLAGS="-m32" LDFLAGS="-m32 -static" ./configure
+        make -j$(nproc)
+        cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
+    - name: Build FIO static binary (Linux - ARM64)
+      if: matrix.target == 'linux-arm64'
+      run: |
+        cd fio-src
+        CC=aarch64-linux-gnu-gcc CFLAGS="-O2" ./configure --disable-native
+        make -j$(nproc) LDFLAGS="-static"
+        cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
+    - name: Build FIO static binary (Linux - ARMv7)
+      if: matrix.target == 'linux-armv7'
+      run: |
+        cd fio-src
+        CC=arm-linux-gnueabihf-gcc CFLAGS="-O2" ./configure --disable-native
+        make -j$(nproc) LDFLAGS="-static"
+        cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}v${{ matrix.goarm }}
+    - name: Build FIO static binary (Linux - Special Architectures)
+      if: startsWith(matrix.target, 'linux-') && !contains(matrix.target, 'amd64') && !contains(matrix.target, '386')
+        && !contains(matrix.target, 'arm')
+      run: |
+        cd fio-src
 
-      - name: Build FIO static binary (macOS)
-        if: startsWith(matrix.target, 'darwin-')
-        run: |
-          cd fio-src
-          ./configure --disable-native
-          make -j$(sysctl -n hw.ncpu)
-          cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
-        continue-on-error: true
-
-      - name: Upload binary artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: fio-${{ matrix.target }}
-          path: bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && 'v'}}${{ matrix.goarm }}${{ matrix.goos == 'windows' && '.exe' || '' }}
-        continue-on-error: true
-
+        # 选择合适的交叉编译器
+        if [[ "${{ matrix.target }}" == "linux-riscv64" ]]; then
+          CROSS_CC=riscv64-linux-gnu-gcc
+        elif [[ "${{ matrix.target }}" == "linux-mips64" ]]; then
+          CROSS_CC=mips64-linux-gnuabi64-gcc
+        elif [[ "${{ matrix.target }}" == "linux-mips64le" ]]; then
+          CROSS_CC=mips64el-linux-gnuabi64-gcc
+        elif [[ "${{ matrix.target }}" == "linux-mips" ]]; then
+          CROSS_CC=mips-linux-gnu-gcc
+        elif [[ "${{ matrix.target }}" == "linux-mipsle" ]]; then
+          CROSS_CC=mipsel-linux-gnu-gcc
+        elif [[ "${{ matrix.target }}" == "linux-ppc64" ]]; then
+          CROSS_CC=powerpc64-linux-gnu-gcc
+        elif [[ "${{ matrix.target }}" == "linux-ppc64le" ]]; then
+          CROSS_CC=powerpc64le-linux-gnu-gcc
+        fi
+        CC=${CROSS_CC} ./configure --disable-native
+        make -j$(nproc) LDFLAGS="-static"
+        cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
+    - name: Build FIO static binary (macOS)
+      if: startsWith(matrix.target, 'darwin-')
+      run: |
+        export CC="clang -arch ${{ matrix.goarch == 'amd64' && 'x86_64' || 'arm64' }}"
+        export CC="clang -arch ${{ matrix.goarch == 'amd64' && 'x86_64' || 'arm64' }}"
+        cd fio-src
+        ./configure --disable-native
+        make -j$(sysctl -n hw.ncpu)
+        cp fio ../bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}
+    - name: Verify declared binary architecture
+      shell: bash
+      run: |
+        set -euo pipefail
+        file="bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && 'v'}}${{ matrix.goarm }}${{ matrix.goos == 'windows' && '.exe' || '' }}"
+        [[ -f "$file" && -s "$file" ]] || { echo "Declared binary missing." >&2; exit 1; }
+        if [[ "${{ matrix.goos }}" == linux ]]; then
+          header=$(readelf -h "$file")
+          case "${{ matrix.goarch }}" in
+            amd64) machine='X86-64'; endian='little endian'; class=ELF64 ;;
+            386) machine='80386'; endian='little endian'; class=ELF32 ;;
+            arm64) machine='AArch64'; endian='little endian'; class=ELF64 ;;
+            arm) machine='ARM'; endian='little endian'; class=ELF32 ;;
+            riscv64) machine='RISC-V'; endian='little endian'; class=ELF64 ;;
+            mips64) machine='MIPS'; endian='big endian'; class=ELF64 ;;
+            mips64le) machine='MIPS'; endian='little endian'; class=ELF64 ;;
+            mips) machine='MIPS'; endian='big endian'; class=ELF32 ;;
+            mipsle) machine='MIPS'; endian='little endian'; class=ELF32 ;;
+            ppc64) machine='PowerPC64'; endian='big endian'; class=ELF64 ;;
+            ppc64le) machine='PowerPC64'; endian='little endian'; class=ELF64 ;;
+            *) exit 1 ;;
+          esac
+          grep -F "$machine" <<< "$header"
+          grep -F "$endian" <<< "$header"
+          grep -F "$class" <<< "$header"
+          readelf -l "$file" > binary-segments.txt
+          if grep -q INTERP binary-segments.txt; then echo "Binary retained a dynamic loader." >&2; exit 1; fi
+        elif [[ "${{ matrix.goos }}" == darwin ]]; then
+          arch="${{ matrix.goarch == 'amd64' && 'x86_64' || 'arm64' }}"
+          lipo -verify_arch "$arch" "$file"
+        fi
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: fio-${{ matrix.target }}
+        path: bin/fio-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && 'v'}}${{ matrix.goarm }}${{ matrix.goos
+          == 'windows' && '.exe' || '' }}
+        if-no-files-found: error
   collect:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        
-      - name: Download all artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          path: artifacts/
-          
-      - name: Organize binaries
-        run: |
-          mkdir -p bin/
-          
-          # 从所有单独的构建工件中复制文件到disk/bin目录
-          find artifacts/ -type f -not -path "*/bin-directory/*" -exec cp {} bin/ \;
-          
-          # 列出所有收集到的二进制文件
-          echo "Successfully built binaries:"
-          ls -la bin/
-          
-      - name: Upload combined bin directory
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: fio-binaries
-          path: bin/
-          
-      - name: Commit binaries to repository
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
-          git add bin/
-          git commit -m "fix: Update FIO static binaries [skip ci]" || echo "No changes to commit"
-          git push
-        continue-on-error: true
+    - name: Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Download all artifacts
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        path: artifacts/
+    - name: Organize binaries
+      run: |
+        mkdir -p bin/
+
+        # 从所有单独的构建工件中复制文件到disk/bin目录
+        find artifacts/ -type f -not -path "*/bin-directory/*" -exec cp {} bin/ \;
+
+        # 列出所有收集到的二进制文件
+        echo "Successfully built binaries:"
+        ls -la bin/
+    - name: Upload combined bin directory
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: fio-binaries
+        path: bin/
+    - name: Commit binaries to repository
+      run: |
+        set -euo pipefail
+        set -euo pipefail
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+        git add bin/
+        if ! git diff --cached --quiet; then git commit -m "fix: Update FIO static binaries [skip ci]"; fi
+        git push
+
+        # Version only after every declared target passed; consumers discover this immutable timestamp tag.
+        new_tag="v0.0.2-$(date -u +%Y%m%d%H%M%S)"
+        git tag "$new_tag"
+        git push origin "refs/tags/$new_tag"
+'on':
+  workflow_dispatch: null
+permissions:
+  contents: write
