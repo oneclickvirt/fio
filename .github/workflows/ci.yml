@@ -39,3 +39,5 @@ jobs:
     secrets: inherit
 'on':
   workflow_dispatch: null
+permissions:
+  contents: write
