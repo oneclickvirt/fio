@@ -183,7 +183,6 @@ jobs:
       if: startsWith(matrix.target, 'darwin-')
       run: |
         export CC="clang -arch ${{ matrix.goarch == 'amd64' && 'x86_64' || 'arm64' }}"
-        export CC="clang -arch ${{ matrix.goarch == 'amd64' && 'x86_64' || 'arm64' }}"
         cd fio-src
         ./configure --disable-native
         make -j$(sysctl -n hw.ncpu)
@@ -217,7 +216,7 @@ jobs:
           if grep -q INTERP binary-segments.txt; then echo "Binary retained a dynamic loader." >&2; exit 1; fi
         elif [[ "${{ matrix.goos }}" == darwin ]]; then
           arch="${{ matrix.goarch == 'amd64' && 'x86_64' || 'arm64' }}"
-          lipo -verify_arch "$arch" "$file"
+          lipo "$file" -verify_arch "$arch"
         fi
     - name: Upload binary artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
