@@ -1,6 +1,7 @@
 name: CI
 jobs:
   test:
+    timeout-minutes: 30
     strategy:
       matrix:
         go:
@@ -18,13 +19,13 @@ jobs:
     - name: Test
       run: go test ./... -coverprofile=coverage.txt
     - name: Update README.md
-      if: success()
+      if: ${{ success() && !inputs.test_only && env.TAG != '' }}
       run: |
         sed -i "s|go get github.com/oneclickvirt/fio@.*|go get github.com/oneclickvirt/fio@${TAG}|" README.md
       env:
         TAG: ${{ env.TAG }}
     - name: Commit and Push README.md
-      if: success()
+      if: ${{ success() && !inputs.test_only }}
       run: |
         set -euo pipefail
         # CI does not define TAG; avoid a no-op commit failure on hosted runners.
@@ -44,10 +45,16 @@ jobs:
     env:
       GOPROXY: https://proxy.golang.org|direct
   publish-validated-native-binaries:
+    if: ${{ !inputs.test_only }}
     needs: test
     uses: ./.github/workflows/build_fio.yml
     secrets: inherit
 'on':
-  workflow_dispatch: null
+  workflow_dispatch:
+    inputs:
+      test_only:
+        description: Run tests without creating tags, editing README or publishing binaries
+        type: boolean
+        default: false
 permissions:
   contents: write
