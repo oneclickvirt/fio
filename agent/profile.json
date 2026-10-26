@@ -1,0 +1,19 @@
+{
+  "repository": "oneclickvirt/fio",
+  "branch": "main",
+  "skill_name": "oneclickvirt-fio",
+  "purpose": "Use the Go library that embeds fio dependencies for controlled disk benchmarks.",
+  "notes": [
+    "Inspect the exported configuration and embedded asset selection. Bound runtime/file size, use disposable files and preserve explicit paths."
+  ],
+  "guide": "https://www.spiritlhl.net/guide/agent_integrations.html",
+  "releases": false,
+  "mcp": false,
+  "source_files": [
+    "go.mod"
+  ],
+  "purpose_zh": "在受控磁盘测试中使用内嵌 fio 依赖的 Go 库。",
+  "notes_zh": [
+    "核对导出配置和内嵌文件选择，限制运行时长、文件大小并保留用户指定路径。"
+  ]
+}

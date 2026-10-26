@@ -1,0 +1,10 @@
+{
+  "repository": "oneclickvirt/fio",
+  "skill_name": "oneclickvirt-fio",
+  "mcp": false,
+  "files": {
+    "agent/profile.json": "3740405143a050de0b5fb62efa1abea69fcef78bbe2c3be2418e9c9211d9e8cb",
+    "skills/oneclickvirt-fio/SKILL.md": "7bf60e916e7bebf5e660885130f72fcb086682b60e7b3e97b3f506d9165710d5",
+    "skills/oneclickvirt-fio/SKILL_ZH.md": "0113f1d92bc66af98f40cbf332c870f58fbfbabcc85beb807a9e796aa65f83b9"
+  }
+}
